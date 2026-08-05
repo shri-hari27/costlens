@@ -1,0 +1,21 @@
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/tfplan
+
+# Go
+backend/costlens-backend
+*.exe
+
+# Python
+functions/__pycache__/
+functions/*.pyc
+functions/.venv/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
