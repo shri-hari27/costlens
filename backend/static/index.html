@@ -1,1 +1,72 @@
-<h1>CostLens — Coming Soon</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CostLens — Azure FinOps Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">◈</div>
+      <div>
+        <h1>CostLens</h1>
+        <span class="brand-sub">Azure FinOps Dashboard</span>
+      </div>
+    </div>
+    <button id="refreshBtn" class="btn-refresh">
+      <span class="refresh-icon">⟳</span>
+      <span>Refresh Now</span>
+    </button>
+  </header>
+
+  <main class="container">
+    <section class="hero-card">
+      <div class="hero-label">Month-to-Date Spend</div>
+      <div class="hero-value" id="totalCost">$0.00</div>
+      <div class="hero-trend" id="trendIndicator">
+        <span id="trendArrow">→</span>
+        <span id="trendText">Loading...</span>
+      </div>
+      <div class="hero-period" id="periodLabel"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h2 class="card-title">Daily Spend Trend</h2>
+        <div class="chart-wrap">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Spend by Resource Group</h2>
+        <div class="chart-wrap">
+          <canvas id="rgChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="card waste-card">
+      <div class="waste-header">
+        <h2 class="card-title">
+          <span class="waste-icon">◎</span>
+          Waste Radar
+        </h2>
+        <span class="waste-count" id="wasteCount">0 findings</span>
+      </div>
+      <div id="wasteList" class="waste-list">
+        <div class="waste-empty">Scanning for waste...</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
