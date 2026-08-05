@@ -162,6 +162,20 @@ data:
 | **GitHub OIDC trust** | First CI/CD run failed against GitHub's new immutable OIDC subject-claim format (rolled out July 2026); diagnosed from the exact `AADSTS700213` error and fixed by updating the Azure federated credential subject — pipeline has run clean since |
 
 ## Repo structure
+costlens/
+├── backend/ Go service: static dashboard + Blob-reading API
+│ ├── main.go
+│ ├── Dockerfile
+│ └── static/ index.html, style.css, app.js
+├── functions/ Azure Function (Python v2 model)
+│ ├── function_app.py timer + HTTP triggers
+│ ├── shared_logic.py Cost Management + Resource Graph queries
+│ └── requirements.txt
+├── k8s/ Deployment, Service, ServiceAccount manifests
+├── infra/ Terraform: AKS, Storage, Function App, identities
+├── docs/ screenshots
+└── .github/workflows/
+└── backend-ci.yml OIDC login → build/push GHCR → kubectl deploy
 ## Reproducing it locally
 
 1. `cd infra && terraform init && terraform apply` — provisions AKS,
