@@ -1,4 +1,5 @@
 const API_BASE = '';
+const FUNCTION_REFRESH_URL = 'https://costlens-func-frm34u.azurewebsites.net/api/refresh';
 
 let trendChart = null;
 let rgChart = null;
@@ -174,11 +175,22 @@ async function handleRefresh() {
   btn.disabled = true;
 
   try {
-    showToast('Triggering refresh...');
+    showToast('Pulling fresh data from Azure...');
+    // Trigger the Function to fetch fresh Cost Management + Resource Graph data
+    const res = await fetch(FUNCTION_REFRESH_URL, { method: 'POST' });
+    if (!res.ok) throw new Error('Function refresh failed');
+    await res.json();
+
+    // Give Blob Storage a moment to reflect the new snapshot, then reload
+    showToast('Data refreshed — updating dashboard...');
+    await new Promise(r => setTimeout(r, 2000));
     await loadDashboard();
-    showToast('Dashboard refreshed');
+    showToast('Dashboard updated with latest data');
   } catch (err) {
-    showToast('Refresh failed');
+    console.error('Refresh error:', err);
+    // Fall back to just reloading whatever the backend already has
+    await loadDashboard();
+    showToast('Showing latest available data');
   } finally {
     btn.classList.remove('loading');
     btn.disabled = false;

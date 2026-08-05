@@ -19,3 +19,4 @@ functions/.venv/
 # Editor
 .vscode/
 *.swp
+functions/function-package.zip

@@ -14,6 +14,9 @@ SUBSCRIPTION_ID = os.environ.get("SUBSCRIPTION_ID")
 STORAGE_ACCOUNT_NAME = os.environ.get("STORAGE_ACCOUNT_NAME")
 CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 
+# The build VM runs the whole project; it's not "waste" to flag, so exclude it.
+EXCLUDED_VM_NAMES = {"costlens-build-vm"}
+
 
 def get_credential():
     return ManagedIdentityCredential(client_id=CLIENT_ID)
@@ -123,24 +126,29 @@ def query_waste_resources():
             "fixCommand": f"az network public-ip delete --name {row.get('name')} --resource-group {row.get('resourceGroup')}"
         })
 
-    # Running VMs (informational — flagged for review, not necessarily waste)
+    # Running VMs — only flag VMs that are actually running (billing compute),
+    # and exclude the build VM itself since it runs this whole project.
     vm_query = """
     Resources
     | where type =~ 'microsoft.compute/virtualmachines'
     | extend powerState = tostring(properties.extended.instanceView.powerState.code)
+    | where powerState =~ 'PowerState/running'
     | project name, resourceGroup, location, vmSize=properties.hardwareProfile.vmSize, powerState
     """
     vm_result = client.resources(QueryRequest(subscriptions=[SUBSCRIPTION_ID], query=vm_query))
     for row in (vm_result.data or []):
+        vm_name = row.get("name")
+        if vm_name in EXCLUDED_VM_NAMES:
+            continue
         findings.append({
             "type": "running_vm",
-            "name": row.get("name"),
+            "name": vm_name,
             "resourceGroup": row.get("resourceGroup"),
             "location": row.get("location"),
             "vmSize": row.get("vmSize"),
             "powerState": row.get("powerState"),
             "estimatedMonthlyCost": None,
-            "fixCommand": f"az vm deallocate --name {row.get('name')} --resource-group {row.get('resourceGroup')}"
+            "fixCommand": f"az vm deallocate --name {vm_name} --resource-group {row.get('resourceGroup')}"
         })
 
     return {
