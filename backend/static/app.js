@@ -11,8 +11,11 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-function formatCurrency(n) {
-  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const CURRENCY_SYMBOLS = { USD: '$', INR: '₹', EUR: '€', GBP: '£' };
+
+function formatCurrency(n, currency) {
+  const symbol = CURRENCY_SYMBOLS[currency] || (currency ? currency + ' ' : '$');
+  return symbol + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 async function fetchSummary() {
@@ -34,7 +37,7 @@ async function fetchWaste() {
 }
 
 function renderSummary(data) {
-  document.getElementById('totalCost').textContent = formatCurrency(data.totalCost || 0);
+  document.getElementById('totalCost').textContent = formatCurrency(data.totalCost || 0, data.currency);
   document.getElementById('periodLabel').textContent =
     data.periodStart && data.periodEnd ? `${data.periodStart} to ${data.periodEnd}` : '';
 
@@ -144,7 +147,7 @@ function renderWaste(data) {
         <span class="waste-item-meta">${f.resourceGroup || ''} · ${f.location || ''}</span>
       </div>
       <div class="waste-item-right">
-        ${f.estimatedMonthlyCost != null ? `<span class="waste-item-cost">${formatCurrency(f.estimatedMonthlyCost)}/mo</span>` : ''}
+        ${f.estimatedMonthlyCost != null ? `<span class="waste-item-cost">${formatCurrency(f.estimatedMonthlyCost, 'USD')}/mo</span>` : ''}
         <code class="waste-item-cmd" title="Click to copy" data-cmd="${(f.fixCommand || '').replace(/"/g, '&quot;')}">${f.fixCommand || ''}</code>
       </div>
     </div>

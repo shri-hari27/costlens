@@ -62,17 +62,24 @@ def query_cost_management():
 
     resource_groups = []
     total_cost = 0.0
+    # The API returns a "Currency" column with the subscription's actual
+    # billing currency (e.g. INR for an India-based subscription) — read it
+    # from the response instead of assuming USD.
+    detected_currency = "USD"
 
     for row in rows:
         row_dict = dict(zip(columns, row))
         cost = float(row_dict.get("Cost", 0))
         rg_name = row_dict.get("ResourceGroupName", "unknown")
+        row_currency = row_dict.get("Currency")
+        if row_currency:
+            detected_currency = row_currency
         resource_groups.append({"resourceGroup": rg_name, "cost": round(cost, 2)})
         total_cost += cost
 
     return {
         "totalCost": round(total_cost, 2),
-        "currency": "USD",
+        "currency": detected_currency,
         "periodStart": start_of_month.strftime("%Y-%m-%d"),
         "periodEnd": today.strftime("%Y-%m-%d"),
         "byResourceGroup": sorted(resource_groups, key=lambda x: x["cost"], reverse=True),
@@ -96,7 +103,6 @@ def query_waste_resources():
     disk_result = client.resources(QueryRequest(subscriptions=[SUBSCRIPTION_ID], query=disk_query))
     for row in (disk_result.data or []):
         size_gb = row.get("sizeGb", 0) or 0
-        # Rough estimate: Standard HDD ~$0.05/GB/month, adjust for SKU roughly
         est_monthly = round(size_gb * 0.05, 2)
         findings.append({
             "type": "unattached_disk",
@@ -116,7 +122,7 @@ def query_waste_resources():
     """
     ip_result = client.resources(QueryRequest(subscriptions=[SUBSCRIPTION_ID], query=ip_query))
     for row in (ip_result.data or []):
-        est_monthly = 3.65  # rough Standard Static Public IP monthly cost estimate
+        est_monthly = 3.65
         findings.append({
             "type": "unassociated_public_ip",
             "name": row.get("name"),
@@ -169,16 +175,14 @@ def write_snapshot():
 
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # Write cost snapshot (dated + latest)
     cost_container = blob_service.get_container_client("cost-snapshots")
     cost_container.upload_blob(f"{date_str}.json", json.dumps(cost_data), overwrite=True)
     cost_container.upload_blob("latest.json", json.dumps(cost_data), overwrite=True)
 
-    # Write waste report (dated + latest)
     waste_container = blob_service.get_container_client("waste-reports")
     waste_container.upload_blob(f"{date_str}.json", json.dumps(waste_data), overwrite=True)
     waste_container.upload_blob("latest.json", json.dumps(waste_data), overwrite=True)
 
-    logging.info(f"Snapshot written for {date_str}: total cost ${cost_data['totalCost']}, {waste_data['totalFindings']} waste findings")
+    logging.info(f"Snapshot written for {date_str}: total cost {cost_data['currency']} {cost_data['totalCost']}, {waste_data['totalFindings']} waste findings")
 
     return cost_data, waste_data
